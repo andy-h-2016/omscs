@@ -97,12 +97,19 @@ class Switch(StpSwitch):
 
         # decrement ttl and send to neighbors if new ttl > 0
         if message.ttl > 0:
-            newTTL = message.ttl -1
+            newTTL = message.ttl - 1
             for destinationID in self.links:
-                passThrough = self.pathToRoot == destinationID
-                newMessage = Message(self.root, self.distance, self.switchID, destinationID, passThrough, newTTL)
+                pathThrough = self.pathToRoot == destinationID
+                newMessage = Message(
+                    self.root,
+                    self.distance,
+                    self.switchID,
+                    destinationID,
+                    pathThrough,
+                    newTTL,
+                )
                 self.send_message(newMessage)
-    
+
     def update_root(self, message):
         """
         Checks if root needs to be updated; performs the update if so.
@@ -112,7 +119,7 @@ class Switch(StpSwitch):
         """
 
         # Save current state of switch to avoid timing issues
-        # All comparisons  
+        # All comparisons
         currentDistance = self.distance
         currentRoot = self.root
         currentPathToRoot = self.pathToRoot
@@ -126,7 +133,6 @@ class Switch(StpSwitch):
             self.pathToRoot = message.origin
 
         elif message.root == currentRoot:
-
             # case where distance to root is the same but sender has lower id
             if newDistance == currentDistance and message.origin < self.pathToRoot:
                 newPathToRoot = message.origin
@@ -146,12 +152,23 @@ class Switch(StpSwitch):
                 self.pathToRoot = newPathToRoot
                 self.activeLinks.add(newPathToRoot)
 
-            elif message.passThrough and not currentActiveLinks.get(message.origin):
+            elif message.pathThrough and message.origin not in currentActiveLinks:
                 self.activeLinks.add(message.origin)
-            
-            elif not message.passThrough and currentActiveLinks.get(message.origin):
-                self.activeLinks.remove(message.origin)
 
+            elif not message.pathThrough and message.origin in currentActiveLinks and message.origin != currentRoot and message.origin != currentPathToRoot:
+                print(f"REMOVING ACTIVE LINK: {message.origin}")
+                print(f"currentRoot: {currentRoot}")
+                print(f"currentDistance: {currentDistance}")
+                print(f"currentActiveLinks: {currentActiveLinks}")
+                print(f"currentPathToRoot: {currentPathToRoot}")
+                print("### instant switch state ###")
+                print(vars(self))
+                print("")
+                print("$$$ message $$$")
+                print(vars(message))
+                print("-------------------")
+                print("")
+                self.activeLinks.remove(message.origin)
 
     def generate_logstring(self):
         """
@@ -174,7 +191,7 @@ class Switch(StpSwitch):
         #
         #      A full example of a valid output file is included (Logs/) in the project skeleton.
 
-        # convert set of activeLinks to list and sort it 
+        # convert set of activeLinks to list and sort it
         activeLinks = list(self.activeLinks)
         activeLinks.sort()
         strings = [f"{self.switchID} - {link}" for link in activeLinks]
