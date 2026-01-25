@@ -79,7 +79,6 @@ class Switch(StpSwitch):
         self.activeLinks = set()
         self.pathToRoot = switchID
 
-
     def process_message(self, message: Message):
         """
         Processes the messages from other switches. Updates its own data (members),
@@ -91,17 +90,18 @@ class Switch(StpSwitch):
         # TODO: This function needs to accept an incoming message and process it accordingly.
         #      This function is called every time the switch receives a new message.
         # update Root?
-
+        self.update_root(message)
 
         # update active links?
         # send message?
 
         # decrement ttl and send to neighbors if new ttl > 0
-        message.ttl -= 1
         if message.ttl > 0:
-            # determine if message should be sent with passthru = true
-            self.send_message(message)
-    
+            newTTL = message.ttl -1
+            for destinationID in self.links:
+                passThrough = self.pathToRoot == destinationID
+                newMessage = Message(self.root, self.distance, self.switchID, destinationID, passThrough, newTTL)
+                self.send_message(newMessage)
     
     def update_root(self, message):
         """
@@ -128,7 +128,7 @@ class Switch(StpSwitch):
         elif message.root == currentRoot:
 
             # case where distance to root is the same but sender has lower id
-            if newDistance == self.distance and message.origin < self.pathToRoot:
+            if newDistance == currentDistance and message.origin < self.pathToRoot:
                 newPathToRoot = message.origin
 
                 # new path to root, switch out activeLinks
@@ -137,7 +137,7 @@ class Switch(StpSwitch):
                 self.activeLinks.add(newPathToRoot)
 
             # case where shorter path found
-            elif newDistance < self.distance:
+            elif newDistance < currentDistance:
                 self.distance = newDistance
                 newPathToRoot = message.origin
 
@@ -151,19 +151,6 @@ class Switch(StpSwitch):
             
             elif not message.passThrough and currentActiveLinks.get(message.origin):
                 self.activeLinks.remove(message.origin)
-
-            
-
-
-
-
-
-
-
-    def calculate_distance(self, src, dst)
-
-
-
 
 
     def generate_logstring(self):
@@ -186,4 +173,11 @@ class Switch(StpSwitch):
         #      2 - 1, 2 - 3
         #
         #      A full example of a valid output file is included (Logs/) in the project skeleton.
-        return "# - #, # - #, # - #"
+
+        # convert set of activeLinks to list and sort it 
+        activeLinks = list(self.activeLinks)
+        activeLinks.sort()
+        strings = [f"{self.switchID} - {link}" for link in activeLinks]
+        separator = ", "
+        logstrings = separator.join(strings)
+        return logstrings
