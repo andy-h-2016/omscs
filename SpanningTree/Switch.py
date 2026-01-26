@@ -96,7 +96,7 @@ class Switch(StpSwitch):
         # send message?
 
         # decrement ttl and send to neighbors if new ttl > 0
-        if message.ttl > 0:
+        if message.ttl > -1:
             newTTL = message.ttl - 1
             for destinationID in self.links:
                 pathThrough = self.pathToRoot == destinationID
@@ -156,18 +156,6 @@ class Switch(StpSwitch):
                 self.activeLinks.add(message.origin)
 
             elif not message.pathThrough and message.origin in currentActiveLinks and message.origin != currentRoot and message.origin != currentPathToRoot:
-                print(f"REMOVING ACTIVE LINK: {message.origin}")
-                print(f"currentRoot: {currentRoot}")
-                print(f"currentDistance: {currentDistance}")
-                print(f"currentActiveLinks: {currentActiveLinks}")
-                print(f"currentPathToRoot: {currentPathToRoot}")
-                print("### instant switch state ###")
-                print(vars(self))
-                print("")
-                print("$$$ message $$$")
-                print(vars(message))
-                print("-------------------")
-                print("")
                 self.activeLinks.remove(message.origin)
 
     def generate_logstring(self):
