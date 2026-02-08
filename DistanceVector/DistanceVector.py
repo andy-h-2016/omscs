@@ -63,6 +63,7 @@ class DistanceVector(Node):
 
         # Implement the Bellman-Ford algorithm here.  It must accomplish two tasks below:
         # TODO 1. Process queued messages       
+        change_flag = False
         for msg in self.messages:            
             (outgoing_name, advertised_dv) = msg
             (_, weight_to_outgoing_node) = self.get_outgoing_neighbor_weight(outgoing_name)
@@ -70,22 +71,27 @@ class DistanceVector(Node):
                 print(f"Outgoing Node {outgoing_name} Not Found for Origin Node {self.name}")
                 continue
             
-            print(f"dv: {advertised_dv}")
+            # print(f"dv: {advertised_dv}")
 
             for dest, weight in advertised_dv.items():
                 new_weight = weight_to_outgoing_node + weight
                 if dest in self.distance_vector:
-                    self.distance_vector[dest] = min(self.distance_vector[dest], new_weight)
+                    current_weight = self.distance_vector[dest]
+                    if new_weight < current_weight: 
+                        self.distance_vector[dest] = new_weight
+                        change_flag = True
                 else:
                     self.distance_vector[dest] = new_weight
+                    change_flag = True
         
         # Empty queue
         self.messages = []
 
         # TODO 2. Send neighbors updated distances
-        msg = self.create_message()
-        for neighbor_name in self.neighbor_names:
-            self.send_msg(msg, neighbor_name)
+        if change_flag:
+            msg = self.create_message()
+            for neighbor_name in self.neighbor_names:
+                self.send_msg(msg, neighbor_name)
             
 
     def log_distances(self):
@@ -103,5 +109,5 @@ class DistanceVector(Node):
         # An example call that which prints the format example text above (hardcoded) is provided.        
         list = []
         for dest_name, dist in self.distance_vector.items():
-            list.append(f"({dest_name}, {dist})")
-        add_entry(self.name, ", ".join(list))    
+            list.append(f"({dest_name},{dist})")
+        add_entry(self.name, " ".join(list))    
