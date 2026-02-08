@@ -35,7 +35,6 @@ class DistanceVector(Node):
         self.distance_vector = {self.name: 0}
 
     def create_message(self):
-
         return (self.name, self.distance_vector)
 
 
@@ -66,14 +65,19 @@ class DistanceVector(Node):
         # TODO 1. Process queued messages       
         for msg in self.messages:            
             (outgoing_name, advertised_dv) = msg
-            weight_to_outgoing_node = self.get_outgoing_neighbor_weight(outgoing_name)
+            (_, weight_to_outgoing_node) = self.get_outgoing_neighbor_weight(outgoing_name)
             if weight_to_outgoing_node == "Node Not Found":
                 print(f"Outgoing Node {outgoing_name} Not Found for Origin Node {self.name}")
                 continue
             
-            for dest, weight in advertised_dv:
+            print(f"dv: {advertised_dv}")
+
+            for dest, weight in advertised_dv.items():
                 new_weight = weight_to_outgoing_node + weight
-                self.distance_vector[dest] = min(self.distance_vector[dest], new_weight)
+                if dest in self.distance_vector:
+                    self.distance_vector[dest] = min(self.distance_vector[dest], new_weight)
+                else:
+                    self.distance_vector[dest] = new_weight
         
         # Empty queue
         self.messages = []
@@ -98,6 +102,6 @@ class DistanceVector(Node):
         # TODO: Use the provided helper function add_entry() to accomplish this task (see helpers.py).
         # An example call that which prints the format example text above (hardcoded) is provided.        
         list = []
-        for dest_name, dist in self.distance_vector:
+        for dest_name, dist in self.distance_vector.items():
             list.append(f"({dest_name}, {dist})")
         add_entry(self.name, ", ".join(list))    
