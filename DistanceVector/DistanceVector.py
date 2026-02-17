@@ -18,9 +18,7 @@
 from Node import *
 from helpers import *
 
-
 class DistanceVector(Node):
-    
     def __init__(self, name, topolink, outgoing_links, incoming_links):
         """ Constructor. This is run once when the DistanceVector object is
         created at the beginning of the simulation. Initializing data structure(s)
@@ -62,8 +60,10 @@ class DistanceVector(Node):
         messages that need to be sent to other nodes as a result are sent. """
 
         # Implement the Bellman-Ford algorithm here.  It must accomplish two tasks below:
-        # TODO 1. Process queued messages       
-        change_flag = False
+        # TODO 1. Process queued messages
+        # Assumption: all queued messages are from outgoing neighbors 
+        # For each queued message:
+        dv_changed = False
         for msg in self.messages:            
             (outgoing_name, advertised_dv) = msg
             (_, weight_to_outgoing_node) = self.get_outgoing_neighbor_weight(outgoing_name)
@@ -71,24 +71,37 @@ class DistanceVector(Node):
                 print(f"Outgoing Node {outgoing_name} Not Found for Origin Node {self.name}")
                 continue
             
-            # print(f"dv: {advertised_dv}")
+            # iterate through the advertised distance vector's weights
+            # if destination is new to the current node, add it to its distance vector
+            # if destination is already known, compare with new weights
 
             for dest, weight in advertised_dv.items():
+                if dest == self.name:
+                    continue
+
+                # Dx-->y   =         Dx-->w          + Dw-->y
                 new_weight = weight_to_outgoing_node + weight
+                if new_weight < -99 or weight == -99:
+                    # make sure the lowest weight does not go lower than -99.
+                    new_weight = -99
+
                 if dest in self.distance_vector:
                     current_weight = self.distance_vector[dest]
                     if new_weight < current_weight: 
                         self.distance_vector[dest] = new_weight
-                        change_flag = True
+                        dv_changed = True
                 else:
+
                     self.distance_vector[dest] = new_weight
-                    change_flag = True
+                    dv_changed = True
+                
         
         # Empty queue
         self.messages = []
 
         # TODO 2. Send neighbors updated distances
-        if change_flag:
+        # only send message if own dv's are changed
+        if dv_changed:
             msg = self.create_message()
             for neighbor_name in self.neighbor_names:
                 self.send_msg(msg, neighbor_name)
