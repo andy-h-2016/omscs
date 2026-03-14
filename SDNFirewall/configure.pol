@@ -24,5 +24,20 @@
 # subnet other than /32 must be 0.
 #
 # Example Rules:
-1,Block,-,-,10.0.0.1/32,10.0.1.0/24,6,-,80,Block 10.0.0.1 from accessing a web server on the 10.0.1.0/24 network
-2,Allow,-,-,10.0.0.1/32,10.0.1.125/32,6,-,80,Allow 10.0.0.1 to access a web server on 10.0.1.125 overriding previous rule
+101,Block,-,-,10.0.0.1/32,10.0.1.0/24,6,-,80,Block 10.0.0.1 from accessing a web server on the 10.0.1.0/24 network
+201,Allow,-,-,10.0.0.1/32,10.0.1.125/32,6,-,80,Allow 10.0.0.1 to access a web server on 10.0.1.125 overriding previous rule
+1,Block,-,-,10.0.30.4/32,-,6,-,-,Task 1: Block 10.0.30.4 (cn4) from initiating TCP calls
+2.1,Block,-,-,10.0.30.5/32,-,-,-,-,Task 2.1: Block 10.0.30.5 (cn5) from initiating any calls
+2.2,Block,-,-,-,10.0.30.5/32,-,-,-,Task 2.2: Block 10.0.30.5 (cn5) from receiving any calls
+4.1,Block,-,-,10.0.30.3/32,-,6,80,-,Task 4.1: Block 10.0.30.3 (cn3) from sending any TCP HTTP calls
+4.2,Block,-,-,10.0.30.3/32,-,6,443,-,Task 4.2: Block 10.0.30.3 (cn3) from sending any TCP HTTPS calls
+5.1,Block,-,-,10.0.40.128/30,10.0.1.33/31,6,-,9520,Task 5.1: Block uk2-uk5 from accessing service on us3-us4 on TCP Port 9520
+5.2,Block,-,-,10.0.20.125/31,10.0.1.33/31,6,-,9520,Task 5.2: Block in4-5 from accessing service on us3-us4 on TCP Port 9520
+5.3,Block,-,-,10.0.1.125/32,10.0.1.33/31,6,-,9520,Task 5.3: Block us5 from accessing service on us3-us4 on TCP Port 9520
+5.4,Block,-,-,10.0.0.220/32,10.0.1.33/31,6,-,9520,Task 5.4: Block hq5 from accessing service on us3-us4 on TCP Port 9520
+6,Block,00:00:00:01:00:1e,-,-,-,17,-,-,Task 6: Block us1 MAC address from making any UDP requests
+7.1,Block,-,-,-,10.0.0.0/24,6,-,25,Task 7.1: Block requests to hq subnet's TCP Port 25
+7.2,Block,-,-,-,10.0.1.0/24,6,-,25,Task 7.2: Block requests to us subnet's TCP Port 25
+7.3,Block,-,-,-,10.0.20.0/24,6,-,25,Task 7.3: Block requests to in subnet's TCP Port 25
+7.4,Block,-,-,-,10.0.30.0/24,6,-,25,Task 7.4: Block requests to cn subnet's TCP Port 25
+7.5,Block,-,-,-,10.0.40.0/24,6,-,25,Task 7.5: Block requests to uk subnet's TCP Port 25
