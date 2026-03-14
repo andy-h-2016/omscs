@@ -44,8 +44,26 @@ def firewall_policy_processing(policies):
         # in Implementation Hints on how to do this. 
         # HINT:  Think about how to use the priority in your flow modification.
 
-        rule = None # Please note that you need to redefine this variable below to create a valid POX Flow Modification Object
+        matchobj= of.ofp_match()
+        matchobj.dl_type = 0x800
+        matchobj.dl_src = policy['mac-src']
+        matchobj.dl_dst = policy['mac-dst']
+        matchobj.nw_src = policy['ip-src']
+        matchobj.nw_dst = policy['ip-dst']
+        matchobj.nw_proto = policy['ipprotocol']
+        matchobj.tp_src = policy['port-src']
+        matchobj.tp_dst = policy['port-dst']
 
+        # Clean up any empty values 
+        for key, value in matchobj.items():
+            if value == '-':
+                del matchobj[key]
+        
+        rule = of.ofp_flow_mod()
+        rule.match = matchobj
+
+        if policy['action'] == 'Allow':
+            rule.actions.append(of.ofp_action_output())
 
         # End Code Here
         print('Added Rule ',policy['rulenum'],': ',policy['comment'])
@@ -53,3 +71,14 @@ def firewall_policy_processing(policies):
         rules.append(rule)
     
     return rules
+
+
+def createMatchObj(policy):
+    matchobj= of.ofp_match()
+    matchobj.dl_type = 0x800
+    for key, value in policy.items():
+        match key:
+            case 'mac-src':
+                matchobj.dl_src = EthAddr(value)
+            case 'mac-dst':
+                matchobj.dl_dst = EthAddr()
