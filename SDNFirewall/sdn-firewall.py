@@ -43,42 +43,48 @@ def firewall_policy_processing(policies):
         # Enter your code here to implement matching and block/allow rules.  See the links
         # in Implementation Hints on how to do this. 
         # HINT:  Think about how to use the priority in your flow modification.
-
-        matchobj= of.ofp_match()
-        matchobj.dl_type = 0x800
-        matchobj.dl_src = policy['mac-src']
-        matchobj.dl_dst = policy['mac-dst']
-        matchobj.nw_src = policy['ip-src']
-        matchobj.nw_dst = policy['ip-dst']
-        matchobj.nw_proto = policy['ipprotocol']
-        matchobj.tp_src = policy['port-src']
-        matchobj.tp_dst = policy['port-dst']
-
-        # Clean up any empty values 
-        for key, value in matchobj.items():
-            if value == '-':
-                del matchobj[key]
+        matchObj = createMatchObj(policy)
         
         rule = of.ofp_flow_mod()
-        rule.match = matchobj
+        rule.match = matchObj
 
         if policy['action'] == 'Allow':
-            rule.actions.append(of.ofp_action_output())
+            rule.priority = 2000
+            rule.actions.append(of.ofp_action_output(port=of.OFPP_NORMAL))
+        else:
+            rule.priority = 1000
 
         # End Code Here
         print('Added Rule ',policy['rulenum'],': ',policy['comment'])
-        #print(rule)   #Uncomment this to debug your "rule"
+        # print(rule)   #Uncomment this to debug your "rule"
         rules.append(rule)
     
     return rules
-
 
 def createMatchObj(policy):
     matchobj= of.ofp_match()
     matchobj.dl_type = 0x800
     for key, value in policy.items():
+        if value == '-':
+            continue
         match key:
             case 'mac-src':
                 matchobj.dl_src = EthAddr(value)
             case 'mac-dst':
-                matchobj.dl_dst = EthAddr()
+                matchobj.dl_dst = EthAddr(value)
+            case 'ip-src':
+                matchobj.nw_src = value
+            case 'ip-dst':
+                matchobj.nw_dst = value
+            case 'ipprotocol':
+                if value != '-':
+                    matchobj.nw_proto = int(value)
+                if value == "6":
+                    matchobj.dl_type=0x800
+            case 'port-src':
+                matchobj.tp_src = int(value)
+            case 'port-dst':
+                matchobj.tp_dst = int(value)
+            case _:
+                continue
+    return matchobj
