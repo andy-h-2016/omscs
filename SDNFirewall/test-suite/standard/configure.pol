@@ -1,0 +1,47 @@
+# CS 6250 Fall 2025 - SDN Firewall Project with POX
+# build gibson-29
+#
+# This file contains the rules for the firewall as specified in the Project Documentation.  
+#
+# Rule Format:
+# RuleNumber,Action,Source MAC,Destination MAC,Source IP,Destination IP,Protocol,Source Port,Destination Port,Comment/Note
+# RuleNumber = this is a rule number to help you track a particular rule - it is not used in the firewall implementation
+# Action = Block or Allow , Allow Rules need to take precedence over Block Rules
+# Source / Destination MAC address in form of xx:xx:xx:xx:xx:xx
+# Source / Destination IP Address in form of xxx.xxx.xxx.xxx/xx in CIDR notation
+# Protocol = integer IP protocol number per IANA (0-254)
+# Source / Destination Port = if Protocol is TCP or UDP, this is the Application Port Number per IANA
+# Comment/Note = this is for your use in tracking rules.
+#
+# Any field not being used for a match should have a '-' character as it's entry (except for RuleNumber/Comment)
+# Do not pad any of the entries (i.e., have a rule like:  1, Block, -, -,...)
+#
+# Warning:  For the IP address, you need to specify an appropriate network address
+# that matches the subnet mask you are using.  For instance, if you want to use a /16
+# subnet mask, then the IP address must be x.x.0.0.  For example, a proper address to 
+# reference a 192.168.10.x/24 network would be 192.168.10.0/24.  A single host
+# is addressed as a single IP address with a /32.  In other words, the host bit for a 
+# subnet other than /32 must be 0.
+#
+# Example Rules:
+101,Block,-,-,10.0.0.1/32,10.0.1.0/24,6,-,80,Block 10.0.0.1 from accessing a web server on the 10.0.1.0/24 network
+201,Allow,-,-,10.0.0.1/32,10.0.1.125/32,6,-,80,Allow 10.0.0.1 to access a web server on 10.0.1.125 overriding previous rule
+1,Block,-,-,10.0.30.4/32,-,6,-,-,Task 1: Block 10.0.30.4 (cn4) from initiating TCP calls
+2.1,Block,-,-,10.0.30.5/32,-,-,-,-,Task 2.1: Block 10.0.30.5 (cn5) from initiating any calls
+2.2,Block,-,-,-,10.0.30.5/32,-,-,-,Task 2.2: Block 10.0.30.5 (cn5) from receiving any calls
+3.1,Block,-,-,-,10.0.1.0/24,1,-,-,Task 3.1: Block us subnet from receiving ICMP pings
+3.2,Block,-,-,-,10.0.20.0/24,1,-,-,Task 3.2: Block in subnet from receiving ICMP pings
+3.3,Block,-,-,-,10.0.40.0/24,1,-,-,Task 3.3: Block uk subnet from receiving ICMP pings
+3.4,Allow,-,-,10.0.0.0/24,-,1,-,-,Task 3.4: Allow HQ to send any ICMP pings (overrides rules 3.1 - 3.4)
+4.1,Block,-,-,10.0.30.3/32,-,6,80,-,Task 4.1: Block 10.0.30.3 (cn3) from sending any TCP HTTP calls
+4.2,Block,-,-,10.0.30.3/32,-,6,443,-,Task 4.2: Block 10.0.30.3 (cn3) from sending any TCP HTTPS calls
+5.1,Block,-,-,10.0.40.128/30,10.0.1.32/30,6,-,9520,Task 5.1: Block uk2-uk5 from accessing service on us3-us4 on TCP Port 9520
+5.2,Block,-,-,10.0.20.124/30,10.0.1.32/30,6,-,9520,Task 5.2: Block in4-5 from accessing service on us3-us4 on TCP Port 9520
+5.3,Block,-,-,10.0.1.124/30,10.0.1.32/30,6,-,9520,Task 5.3: Block us5 from accessing service on us3-us4 on TCP Port 9520
+5.4,Block,-,-,10.0.0.220/32,10.0.1.32/30,6,-,9520,Task 5.4: Block hq5 from accessing service on us3-us4 on TCP Port 9520
+6,Block,00:00:00:01:00:1e,-,-,-,17,-,-,Task 6: Block us1 MAC address from making any UDP requests
+7.1,Block,-,-,-,10.0.0.0/24,6,-,25,Task 7.1: Block requests to hq subnet's TCP Port 25
+7.2,Block,-,-,-,10.0.1.0/24,6,-,25,Task 7.2: Block requests to us subnet's TCP Port 25
+7.3,Block,-,-,-,10.0.20.0/24,6,-,25,Task 7.3: Block requests to in subnet's TCP Port 25
+7.4,Block,-,-,-,10.0.30.0/24,6,-,25,Task 7.4: Block requests to cn subnet's TCP Port 25
+7.5,Block,-,-,-,10.0.40.0/24,6,-,25,Task 7.5: Block requests to uk subnet's TCP Port 25

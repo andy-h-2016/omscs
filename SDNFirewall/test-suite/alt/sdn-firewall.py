@@ -48,10 +48,6 @@ def firewall_policy_processing(policies):
         rule = of.ofp_flow_mod()
         rule.match = matchObj
 
-        # By default, a matched rule will Block/Drop a packet
-        # Add an action to the rule if it is meant to Allow a packet
-        # By default, the firewall allows all traffic
-        # Allow rules are meant to overule a more restrictive Block rule; give it a higher priority.
         if policy['action'] == 'Allow':
             rule.priority = 2000
             rule.actions.append(of.ofp_action_output(port=of.OFPP_NORMAL))
@@ -67,7 +63,7 @@ def firewall_policy_processing(policies):
 
 def createMatchObj(policy):
     matchobj= of.ofp_match()
-    matchobj.dl_type = 0x800 # assume IPv4 traffic
+    matchobj.dl_type = 0x800
     for key, value in policy.items():
         if value == '-':
             continue
@@ -81,7 +77,10 @@ def createMatchObj(policy):
             case 'ip-dst':
                 matchobj.nw_dst = value
             case 'ipprotocol':
-                matchobj.nw_proto = int(value)
+                if value != '-':
+                    matchobj.nw_proto = int(value)
+                if value == "6":
+                    matchobj.dl_type=0x800
             case 'port-src':
                 matchobj.tp_src = int(value)
             case 'port-dst':
