@@ -30,7 +30,7 @@ parser.add_argument('--sleep', default=3, type=int)
 args = parser.parse_args()
 
 FLAGS_rogue_as = args.rogue
-ROGUE_AS_NAME = 'R4'
+ROGUE_AS_NAME = 'R6'
 
 def log(s, col="green"):
     print(T.colored(s, col))
@@ -88,11 +88,19 @@ class SimpleTopo(Topo):
         create_router_and_hosts(2)
         create_router_and_hosts(3)
         create_router_and_hosts(4)
+        create_router_and_hosts(5)
+        create_router_and_hosts(6)
 
         # link the ASs - the demo scenario is a straight line with the attacker directly attached to AS1/R1
         self.addLink('R1', 'R2')
+        self.addLink('R1', 'R3')
         self.addLink('R2', 'R3')
-        self.addLink('R1', 'R4')
+        self.addLink('R2', 'R4')
+        self.addLink('R2', 'R5')
+        self.addLink('R3', 'R4')
+        self.addLink('R3', 'R5')
+        self.addLink('R4', 'R5')
+        self.addLink('R5', 'R6')
 
 
 def parse_hostname(hostname):
@@ -101,18 +109,18 @@ def parse_hostname(hostname):
 
 def get_ip(hostname):
     as_num, host_num = parse_hostname(hostname)
-    # AS4 is posing as AS3
-    if as_num == 4:
-        as_num = 3
+    # AS6 is posing as AS1
+    if as_num == 6:
+        as_num = 1
     host_ip = f'{10+as_num}.0.{host_num}.1/24'
     return host_ip
 
 
 def get_gateway(hostname):
     as_num, host_num = parse_hostname(hostname)
-    # AS4 is posing as AS3
-    if as_num == 4:
-        as_num = 3
+    # AS6 is posing as AS1
+    if as_num == 6:
+        as_num = 1
     gateway_ip = f'{10+as_num}.0.{host_num}.254'
     return gateway_ip
 
@@ -138,6 +146,8 @@ def main():
     log(f"Waiting {args.sleep} seconds for sysctl changes to take effect...")
     sleep(args.sleep)
 
+    log("num switches: %d" % len(net.switches))
+    log("switches: %s" % str(net.switches))
     for router in net.switches:
         if router.name == ROGUE_AS_NAME and not FLAGS_rogue_as:
             continue
@@ -154,8 +164,8 @@ def main():
         host.cmd("route add default gw %s" % (get_gateway(host.name)))
 
     log("Starting web servers", 'yellow')
-    start_webserver(net, 'h3-1', "Default web server 2.1.1")
-    start_webserver(net, 'h4-1', "*** Attacker web server 2.1.1***")
+    start_webserver(net, 'h1-1', "Default web server 2.1.1")
+    start_webserver(net, 'h6-1', "*** Attacker web server 2.1.1***")
 
     CLI(net, script=args.scriptfile)
     net.stop()
