@@ -48,9 +48,13 @@ def unique_prefixes_by_snapshot(cache_files):
     for fpath in cache_files:
         stream = pybgpstream.BGPStream(data_interface="singlefile")
         stream.set_data_interface_option("singlefile", "rib-file", fpath)
-
+        unique_prefixes = set()
+        for elem in stream:
+            prefix = elem._maybe_field("prefix")
+            unique_prefixes.add(prefix)
+        unique_prefixes_by_snapshot.append(len(unique_prefixes))
+        
         # implement your solution here
-
     return unique_prefixes_by_snapshot
 
 
@@ -74,6 +78,16 @@ def unique_ases_by_snapshot(cache_files):
         stream.set_data_interface_option("singlefile", "rib-file", fpath)
 
         # implement your solution here
+        year = stream
+        unique_ases = set()
+        for entry in year:
+            as_path = entry._maybe_field("as-path")
+            ases = as_path.strip().split(" ")
+            # print("ases: ", ases)
+            # print("len ases: ", len(ases))
+            # print("----")
+            unique_ases.update(ases)
+        unique_ases_by_snapshot.append(len(unique_ases))
 
     return unique_ases_by_snapshot
 
@@ -96,15 +110,56 @@ def top_10_ases_by_prefix_growth(cache_files):
     """
     # the required return type is 'list' - you are welcome to define additional data structures, if needed
     top_10_ases_by_prefix_growth = []
-
+    as_advertisements = {}
     for ndx, fpath in enumerate(cache_files):
         stream = pybgpstream.BGPStream(data_interface="singlefile")
         stream.set_data_interface_option("singlefile", "rib-file", fpath)
 
         # implement your solution here
+        year = stream
+        print("--------------------------- new year ----------------------------")
+        unique_prefixes_per_as_this_year = {}
+        for entry in year:
+            prefix = entry._maybe_field("prefix")
+
+            as_path = entry._maybe_field("as-path")
+            ases = as_path.strip().split(" ")
+            origin_as = ases[-1]
+            if origin_as in unique_prefixes_per_as_this_year:
+                unique_prefixes_per_as_this_year[origin_as].add(prefix)
+            else:
+                unique_prefixes_per_as_this_year[origin_as] = {prefix}
+    
+        for origin_as, unique_prefixes_this_year in unique_prefixes_per_as_this_year.items():
+            num_unique_prefixes = len(unique_prefixes_this_year)
+            if origin_as in as_advertisements:
+                as_advertisements[origin_as]["end"] = num_unique_prefixes
+            else:
+                as_advertisements[origin_as] = {"start": num_unique_prefixes, "end": num_unique_prefixes}
+    
+    as_by_growth = {}
+    growth_rates = []
+    for origin_as, advertisements in as_advertisements.items():
+        start, end = advertisements.values()
+        growth = 0 if start == end else (end - start) / start
+        if growth in as_by_growth:
+            as_by_growth[growth].append(origin_as) 
+        else:
+            # only include new growth rates to the list of growth rates to avoid duplicates
+            growth_rates.append(growth)
+            as_by_growth[growth] = [origin_as]
+
+    growth_rates.sort(reverse=True)
+    for i in range(10):
+        if len(top_10_ases_by_prefix_growth) == 10:
+            break
+        growth = growth_rates[i]
+        for a_system in as_by_growth[growth]:
+            top_10_ases_by_prefix_growth.insert(0, a_system)
+            if len(top_10_ases_by_prefix_growth) == 10:
+                break
 
     return top_10_ases_by_prefix_growth
-
 
 # Task 2: Routing Table Growth: AS-Path Length Evolution Over Time
 def shortest_path_by_origin_by_snapshot(cache_files):
