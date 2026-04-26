@@ -49,12 +49,15 @@ def unique_prefixes_by_snapshot(cache_files):
         stream = pybgpstream.BGPStream(data_interface="singlefile")
         stream.set_data_interface_option("singlefile", "rib-file", fpath)
         unique_prefixes = set()
+        count = 0
         for elem in stream:
+            count += 1
             prefix = elem._maybe_field("prefix")
             unique_prefixes.add(prefix)
         unique_prefixes_by_snapshot.append(len(unique_prefixes))
         
         # implement your solution here
+        print("count: ", count)
     return unique_prefixes_by_snapshot
 
 
@@ -82,10 +85,9 @@ def unique_ases_by_snapshot(cache_files):
         unique_ases = set()
         for entry in year:
             as_path = entry._maybe_field("as-path")
+            if as_path == "":
+                continue
             ases = as_path.strip().split(" ")
-            # print("ases: ", ases)
-            # print("len ases: ", len(ases))
-            # print("----")
             unique_ases.update(ases)
         unique_ases_by_snapshot.append(len(unique_ases))
 
@@ -189,12 +191,41 @@ def shortest_path_by_origin_by_snapshot(cache_files):
     """
     # the required return type is 'dict' - you are welcome to define additional data structures, if needed
     shortest_path_by_origin_by_snapshot = {}
+    num_years = len(cache_files)
 
     for ndx, fpath in enumerate(cache_files):
         stream = pybgpstream.BGPStream(data_interface="singlefile")
         stream.set_data_interface_option("singlefile", "rib-file", fpath)
 
         # implement your solution here
+        year = stream
+        print("--------------------------- new year ----------------------------")
+        for entry in year:
+            as_path = entry._maybe_field("as-path")
+            ases = as_path.strip().split(" ")
+            origin_as = ases[-1]
+            if origin_as == "":
+                continue
+            unique_ases = set()
+            for auto_sys in ases:
+                unique_ases.add(auto_sys)
+            
+            # scenario with AS-123 and current path of 10
+            # a = {}; empty set
+            # a = {'123': [1]}; first path entry for the year
+            # a = {'123': [3, 5]}; path entry already exists, but is shorter than the current path
+            # a = {'123': [3, 15]}; path entry already exists, but is longer than the current path
+            current_path = len(unique_ases)
+            current_path = 0 if current_path < 2 else current_path
+
+            if origin_as in shortest_path_by_origin_by_snapshot:
+                shortest_path_by_year = shortest_path_by_origin_by_snapshot[origin_as]
+                shortest_path = shortest_path_by_year[ndx]
+                shortest_path_by_year[ndx] = current_path if shortest_path == 0 else min(shortest_path, current_path)
+            else:
+                new_list = [0] * num_years
+                new_list[ndx] = current_path
+                shortest_path_by_origin_by_snapshot[origin_as] = new_list
 
     return shortest_path_by_origin_by_snapshot
 
@@ -217,13 +248,60 @@ def aw_event_durations(cache_files):
     """
     # the required return type is 'dict' - you are welcome to define additional data structures, if needed
     aw_event_durations = {}
+    announce_times_by_ip_by_prefix = {}
+    announce_times_by_ip_by_prefix = {}
 
     for ndx, fpath in enumerate(cache_files):
         stream = pybgpstream.BGPStream(data_interface="singlefile")
         stream.set_data_interface_option("singlefile", "upd-file", fpath)
+        for entry in stream:
+            type = entry.type
+            time = entry.time
+            prefix = entry._maybe_field("prefix")
+            if prefix == "":
+                continue
 
-        # implement your solution here
+            peer_ip = entry.peer_address
+            if type == "A":
+                if peer_ip in announce_times_by_ip_by_prefix:
+                    announce_times_by_prefix = announce_times_by_ip_by_prefix[peer_ip]
+                    announce_times_by_prefix[prefix] = time
+                else:
+                    announce_times_by_ip_by_prefix[peer_ip] = {prefix: time}
+            elif type == "W":
+                # skip if a corresponding announce time does not exist
+                if peer_ip not in announce_times_by_ip_by_prefix:
+                    continue
 
+                announce_times_by_prefix = announce_times_by_ip_by_prefix[peer_ip]
+                if prefix not in announce_times_by_prefix:
+                    continue
+
+                announce_time = announce_times_by_prefix[prefix]
+                
+                # skip if announce time and explicit withdraw time are the same
+                # if so, clear the announce time (canceled out by the withdraw time)
+                if time == announce_time:
+                    del announce_times_by_ip_by_prefix[peer_ip][prefix]
+                    continue
+
+                duration = time - announce_time
+
+                if prefix == "119.235.64.0/19" and peer_ip == "80.81.196.156":
+                    print("announce_time: ", announce_time)
+                    print("time: ", time)
+                    print("duration: ", duration)
+                if peer_ip in aw_event_durations:
+                    durations_by_prefix = aw_event_durations[peer_ip]
+                    if prefix in durations_by_prefix:
+                        durations_by_prefix[prefix].append(duration)
+                    else:
+                        durations_by_prefix[prefix] = [duration]
+                else:
+                    aw_event_durations[peer_ip] = {prefix: [duration]}
+
+                # remove announcement once the duration is calculated
+                del announce_times_by_ip_by_prefix[peer_ip][prefix]
     return aw_event_durations
 
 
@@ -248,10 +326,60 @@ def rtbh_event_durations(cache_files):
     # the required return type is 'dict' - you are welcome to define additional data structures, if needed
     rtbh_event_durations = {}
 
+    aw_event_durations = {}
+    announce_times_by_ip_by_prefix = {}
     for fpath in cache_files:
         stream = pybgpstream.BGPStream(data_interface="singlefile")
         stream.set_data_interface_option("singlefile", "upd-file", fpath)
 
         # implement your solution here
+        for entry in stream:
+            type = entry.type
+            time = entry.time
+            prefix = entry._maybe_field("prefix")
+            if prefix == "":
+                continue
+
+            peer_ip = entry.peer_address
+            if type == "A":
+                if peer_ip in announce_times_by_ip_by_prefix:
+                    announce_times_by_prefix = announce_times_by_ip_by_prefix[peer_ip]
+                    announce_times_by_prefix[prefix] = time
+                else:
+                    announce_times_by_ip_by_prefix[peer_ip] = {prefix: time}
+            elif type == "W":
+                # skip if a corresponding announce time does not exist
+                if peer_ip not in announce_times_by_ip_by_prefix:
+                    continue
+
+                announce_times_by_prefix = announce_times_by_ip_by_prefix[peer_ip]
+                if prefix not in announce_times_by_prefix:
+                    continue
+
+                announce_time = announce_times_by_prefix[prefix]
+                
+                # skip if announce time and explicit withdraw time are the same
+                # if so, clear the announce time (canceled out by the withdraw time)
+                if time == announce_time:
+                    del announce_times_by_ip_by_prefix[peer_ip][prefix]
+                    continue
+
+                duration = time - announce_time
+
+                if prefix == "119.235.64.0/19" and peer_ip == "80.81.196.156":
+                    print("announce_time: ", announce_time)
+                    print("time: ", time)
+                    print("duration: ", duration)
+                if peer_ip in aw_event_durations:
+                    durations_by_prefix = aw_event_durations[peer_ip]
+                    if prefix in durations_by_prefix:
+                        durations_by_prefix[prefix].append(duration)
+                    else:
+                        durations_by_prefix[prefix] = [duration]
+                else:
+                    aw_event_durations[peer_ip] = {prefix: [duration]}
+
+                # remove announcement once the duration is calculated
+                del announce_times_by_ip_by_prefix[peer_ip][prefix]
 
     return rtbh_event_durations
