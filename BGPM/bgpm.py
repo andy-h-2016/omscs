@@ -209,6 +209,8 @@ def shortest_path_by_origin_by_snapshot(cache_files):
             unique_ases = set()
             for auto_sys in ases:
                 unique_ases.add(auto_sys)
+
+                
             
             # scenario with AS-123 and current path of 10
             # a = {}; empty set
@@ -217,14 +219,25 @@ def shortest_path_by_origin_by_snapshot(cache_files):
             # a = {'123': [3, 15]}; path entry already exists, but is longer than the current path
             current_path = len(unique_ases)
             current_path = 0 if current_path < 2 else current_path
-
+            # if ndx == 1 and origin_as == "15479":
+                # print("------------------------------")
+                # print("as_path: ", as_path)
+                # print("ases: ", ases)
+                # print("unique_ases: ", unique_ases)
+                # print("current_path: ", current_path)
             if origin_as in shortest_path_by_origin_by_snapshot:
+                if current_path < 2:
+                    continue
                 shortest_path_by_year = shortest_path_by_origin_by_snapshot[origin_as]
                 shortest_path = shortest_path_by_year[ndx]
+                # if ndx == 1 and origin_as == "15479":
+                #     print("shortest_path: ", shortest_path)
                 shortest_path_by_year[ndx] = current_path if shortest_path == 0 else min(shortest_path, current_path)
             else:
                 new_list = [0] * num_years
                 new_list[ndx] = current_path
+                # if ndx == 1 and origin_as == "15479":
+                    # print("new_list: ", new_list)
                 shortest_path_by_origin_by_snapshot[origin_as] = new_list
 
     return shortest_path_by_origin_by_snapshot
