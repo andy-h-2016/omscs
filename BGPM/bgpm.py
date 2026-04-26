@@ -21,6 +21,7 @@
 # coursework, is prohibited in this course.
 
 import pybgpstream
+import re
 
 # CS 6250 BGP Measurements Project for GA Tech OMSCS CS 6250: Computer Networks
 #
@@ -199,7 +200,6 @@ def shortest_path_by_origin_by_snapshot(cache_files):
 
         # implement your solution here
         year = stream
-        print("--------------------------- new year ----------------------------")
         for entry in year:
             as_path = entry._maybe_field("as-path")
             ases = as_path.strip().split(" ")
@@ -286,11 +286,6 @@ def aw_event_durations(cache_files):
                     continue
 
                 duration = time - announce_time
-
-                if prefix == "119.235.64.0/19" and peer_ip == "80.81.196.156":
-                    print("announce_time: ", announce_time)
-                    print("time: ", time)
-                    print("duration: ", duration)
                 if peer_ip in aw_event_durations:
                     durations_by_prefix = aw_event_durations[peer_ip]
                     if prefix in durations_by_prefix:
@@ -325,8 +320,6 @@ def rtbh_event_durations(cache_files):
     """
     # the required return type is 'dict' - you are welcome to define additional data structures, if needed
     rtbh_event_durations = {}
-
-    aw_event_durations = {}
     announce_times_by_ip_by_prefix = {}
     for fpath in cache_files:
         stream = pybgpstream.BGPStream(data_interface="singlefile")
@@ -340,13 +333,19 @@ def rtbh_event_durations(cache_files):
             if prefix == "":
                 continue
 
+            communities = " ".join(entry.fields["communities"]) if "communities" in entry.fields else ""
             peer_ip = entry.peer_address
             if type == "A":
-                if peer_ip in announce_times_by_ip_by_prefix:
-                    announce_times_by_prefix = announce_times_by_ip_by_prefix[peer_ip]
-                    announce_times_by_prefix[prefix] = time
-                else:
-                    announce_times_by_ip_by_prefix[peer_ip] = {prefix: time}
+                match = re.search(r"\:666\b", communities)
+                if match:        
+                    if peer_ip in announce_times_by_ip_by_prefix:
+                        announce_times_by_prefix = announce_times_by_ip_by_prefix[peer_ip]
+                        announce_times_by_prefix[prefix] = time
+                    else:
+                        announce_times_by_ip_by_prefix[peer_ip] = {prefix: time}
+                elif peer_ip in announce_times_by_ip_by_prefix:
+                    if prefix in announce_times_by_ip_by_prefix[peer_ip]:
+                        del announce_times_by_ip_by_prefix[peer_ip][prefix]
             elif type == "W":
                 # skip if a corresponding announce time does not exist
                 if peer_ip not in announce_times_by_ip_by_prefix:
@@ -356,28 +355,28 @@ def rtbh_event_durations(cache_files):
                 if prefix not in announce_times_by_prefix:
                     continue
 
+                if peer_ip == "2001:7f8::71d4:0:1" and prefix == "2600:1417:3e::/48":
+                    print("announce_time: ", announce_times_by_prefix[prefix])
+                    print("duration: ", time - announce_times_by_prefix[prefix])
+
                 announce_time = announce_times_by_prefix[prefix]
                 
                 # skip if announce time and explicit withdraw time are the same
                 # if so, clear the announce time (canceled out by the withdraw time)
+
                 if time == announce_time:
                     del announce_times_by_ip_by_prefix[peer_ip][prefix]
                     continue
 
                 duration = time - announce_time
-
-                if prefix == "119.235.64.0/19" and peer_ip == "80.81.196.156":
-                    print("announce_time: ", announce_time)
-                    print("time: ", time)
-                    print("duration: ", duration)
-                if peer_ip in aw_event_durations:
-                    durations_by_prefix = aw_event_durations[peer_ip]
+                if peer_ip in rtbh_event_durations:
+                    durations_by_prefix = rtbh_event_durations[peer_ip]
                     if prefix in durations_by_prefix:
                         durations_by_prefix[prefix].append(duration)
                     else:
                         durations_by_prefix[prefix] = [duration]
                 else:
-                    aw_event_durations[peer_ip] = {prefix: [duration]}
+                    rtbh_event_durations[peer_ip] = {prefix: [duration]}
 
                 # remove announcement once the duration is calculated
                 del announce_times_by_ip_by_prefix[peer_ip][prefix]
