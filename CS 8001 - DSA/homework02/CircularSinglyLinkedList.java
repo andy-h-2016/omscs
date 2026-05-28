@@ -146,6 +146,10 @@ public class CircularSinglyLinkedList<T> {
      * @throws java.util.NoSuchElementException if the list is empty
      */
     public T removeFromFront() {
+        if (size == 0) {
+            throw new java.util.NoSuchElementException("cannot remove element from an empty list");
+        }
+
         CircularSinglyLinkedListNode<T> current = head;
         T oldHeadValue = head.getData();
         CircularSinglyLinkedListNode<T> newHead = head.getNext();
@@ -171,6 +175,9 @@ public class CircularSinglyLinkedList<T> {
      * @throws java.util.NoSuchElementException if the list is empty
      */
     public T removeFromBack() {
+        if (size == 0) {
+            throw new java.util.NoSuchElementException("cannot remove element from an empty list");
+        }
         return removeAtIndex(size - 1);
     }
 
