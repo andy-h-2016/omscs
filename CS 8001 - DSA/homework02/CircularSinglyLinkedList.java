@@ -42,7 +42,6 @@ public class CircularSinglyLinkedList<T> {
 
         if (index == 0) {
             addToFront(data);
-            System.out.println(this);
             return;
         }
 
@@ -59,7 +58,6 @@ public class CircularSinglyLinkedList<T> {
         previous.setNext(newNode);
 
         size++;
-        System.out.println(this);
     }
 
     /**
@@ -71,6 +69,10 @@ public class CircularSinglyLinkedList<T> {
      * @throws java.lang.IllegalArgumentException if data is null
      */
     public void addToFront(T data) {
+        if (data == null) {
+            throw new IllegalArgumentException("please provide non-null data");
+        }
+
         if (head == null) {
             head = new CircularSinglyLinkedListNode<>(data, null);
             head.setNext(head);
@@ -111,9 +113,14 @@ public class CircularSinglyLinkedList<T> {
      * @throws java.lang.IndexOutOfBoundsException if index < 0 or index >= size
      */
     public T removeAtIndex(int index) {
-        if (index < 0 || index > size) {
+        if (index < 0 || index >= size) {
             throw new IndexOutOfBoundsException("index needs to be within size of linked list");
         }
+
+        if (index == 0) {
+            return removeFromFront();
+        }
+
         CircularSinglyLinkedListNode<T> current = this.head;
         for (int i = 1; i < index; i++) {
             current = current.getNext();
@@ -124,6 +131,9 @@ public class CircularSinglyLinkedList<T> {
 
         previous.setNext(next);
         size--;
+        if (size == 0) {
+            clear();
+        }
         return current.getData();
     }
 
@@ -146,6 +156,9 @@ public class CircularSinglyLinkedList<T> {
         current.setNext(newHead);
         head = newHead;
         size--;
+        if (size == 0) {
+            clear();
+        }
         return oldHeadValue;
     }
 
@@ -171,7 +184,7 @@ public class CircularSinglyLinkedList<T> {
      * @throws java.lang.IndexOutOfBoundsException if index < 0 or index >= size
      */
     public T get(int index) {
-        if (index < 0 || index > size) {
+        if (index < 0 || index >= size) {
             throw new IndexOutOfBoundsException("index needs to be within size of linked list");
         }
 
@@ -272,21 +285,6 @@ public class CircularSinglyLinkedList<T> {
         }
         return arr;
     }
-
-    public String toString() {
-        String string = "";
-        CircularSinglyLinkedListNode<T> current = head;
-        while (current != null) {
-            string += ", ";
-            string += current.getData();
-            current = current.getNext();
-            if (current == head) {
-                break;
-            }
-        }
-        return string;
-    }
-
 
     /**
      * Returns the head node of the list.
