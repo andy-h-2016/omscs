@@ -31,6 +31,9 @@ public class LinkedStack<T> {
      * @throws java.lang.IllegalArgumentException if data is null
      */
     public void push(T data) {
+        if (data == null) {
+            throw new IllegalArgumentException("can't add non-null data to stack");
+        }
         LinkedNode<T> newNode = new LinkedNode<>(data, head);
         head = newNode;
         size++;
@@ -45,6 +48,9 @@ public class LinkedStack<T> {
      * @throws java.util.NoSuchElementException if the stack is empty
      */
     public T pop() {
+        if (size == 0) {
+            throw new java.util.NoSuchElementException("stack is empty; can't pop");
+        }
         LinkedNode<T> removedNode = head;
         head = head.getNext();
         removedNode.setNext(null);
@@ -62,6 +68,9 @@ public class LinkedStack<T> {
      * @throws java.util.NoSuchElementException if the stack is empty
      */
     public T peek() {
+        if (size == 0) {
+            throw java.util.NoSuchElementException("stack is empty");
+        }
         return head.getData();
     }
 

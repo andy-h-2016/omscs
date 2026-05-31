@@ -52,6 +52,10 @@ public class ArrayQueue<T> {
             throw new IllegalArgumentException("cannot add null data to queue");
         }
 
+        if (size >= backingArray.length) {
+            enlargeCapacity();
+        }
+
         int index = (front + size) % backingArray.length;
         backingArray[index] = data;
         size++;
@@ -77,8 +81,10 @@ public class ArrayQueue<T> {
             throw new java.util.NoSuchElementException("queue is empty; no data to return");
         }
 
-        T data = backingArray[front];
-        backingArray[front] = null;
+        // wraparound index
+        int index = front % backingArray.length;
+        T data = backingArray[index];
+        backingArray[index] = null;
         front++;
         size--;
         return data;
@@ -93,6 +99,9 @@ public class ArrayQueue<T> {
      * @throws java.util.NoSuchElementException if the queue is empty
      */
     public T peek() {
+        if (size == 0) {
+            throw new java.util.NoSuchElementException("empty queue");
+        }
         return backingArray[front];
     }
 
