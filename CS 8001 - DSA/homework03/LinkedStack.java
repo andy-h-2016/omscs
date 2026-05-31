@@ -69,7 +69,7 @@ public class LinkedStack<T> {
      */
     public T peek() {
         if (size == 0) {
-            throw java.util.NoSuchElementException("stack is empty");
+            throw new java.util.NoSuchElementException("stack is empty");
         }
         return head.getData();
     }
