@@ -69,8 +69,8 @@ public class LinkedQueue<T> {
         size--;
 
         if (size == 0) {
-           head = null;
-           tail = null;
+            head = null;
+            tail = null;
         }
         return oldHead.getData();
     }
