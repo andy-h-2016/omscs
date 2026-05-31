@@ -67,6 +67,11 @@ public class LinkedQueue<T> {
 
         oldHead.setNext(null);
         size--;
+
+        if (size == 0) {
+           head = null;
+           tail = null;
+        }
         return oldHead.getData();
     }
 
